@@ -14,7 +14,10 @@ pacman::p_load(tidyverse,
                plm,
                koRpus) 
 
-load("bigframe.rdata")
+library(dplyr)
+
+#load("data/bigframe.rdata")
+load("~/ppol6801/replication1/data/bigframe.rdata")
 ```
 
 # recalculate FRE scores 
@@ -32,7 +35,7 @@ big.frame <- big.frame %>%
 ## Fig 1, boxplot and hist
 
 # saving the og version
-png("outputs/fig_1_og.png", width = 800, height = 600)
+#png("outputs/fig_1_og.png", width = 800, height = 600)
 
 par(bg="white")
 par(mfrow=c(1,2))
@@ -42,23 +45,7 @@ boxplot(big.frame$FRE_recal, ylab="FRE", col="cornsilk2")
 hist(big.frame$FRE_recal, main="", xlab="", col="cornsilk2")
 box()
 
-dev.off()
-
-# MY REMAKES USING GGPLOT
-boxplot <- ggplot(big.frame, aes(y = FRE_recal)) + 
-       geom_boxplot(fill = "cornsilk2", color = "black") +
-  labs(ylab = "FRE") +
-  theme_minimal()
-
-histogram <- ggplot(big.frame, aes(x = FRE_recal)) + 
-       geom_histogram(fill = "cornsilk2", color = "black") +
-  labs(ylab = "FRE") +
-  theme_minimal()
-
-ggsave("outputs/fig_1_boxplot.png", boxplot)
-ggsave("outputs/fig_1_boxplot.png", histogram)
-
-
+#dev.off()
 ```
 
 #Table 2 is a summary of the FRE statistics for the sample,
@@ -135,34 +122,6 @@ lines(low.non$x, low.non$y, lwd=4, col="green")
 # shows that cabinet member speeches did get less complex over time compared to non-cabinet members
 ```
 
-
-```{r}
-##Fig 2: overtime plot of cab and non cab
-
-fig2_df <- big.frame %>%
-  group_by(cabinet, year.dummy) %>%
-  summarize(avg_FRE = mean(FRE_recal))
-
-ggplot(fig2_df, aes(x = year.dummy, y = avg_FRE, color = as.factor(cabinet))) +
-  geom_point(position = position_dodge(width = 0.5), size = 3) +
-  geom_smooth(method = "loess", se = FALSE, size = 1, aes(group = cabinet)) +
-  labs(x = "Session",
-       y = "FRE",
-       color = "Cabinet") +
-  scale_x_discrete(breaks = unique(fig2_df$year.dummy)[seq(1, length(unique(fig2_df$year.dummy)), length.out = 6)]) +
-  theme_minimal() +
-  scale_color_manual(values = c("green", "pink"), labels = c("non-cabinet", "cabinet"))+
-  scale_shape_manual(values = c(22)) +
-  theme(legend.position = c(0.13, 0.85)) +
-  guides(color = guide_legend(override.aes = list(fill = c("green","pink")),
-                              title = "Legend",
-                              keywidth = 1.5,
-                              keyheight = 1.5))
-  
-
-# shows that cabinet member speeches did get less complex over time compared to non-cabinet members
-```
-
 #Figure 3 plots sentence length and syllables per word (mean overview) for cabinet and non-cabinet
 ```{r}
 #sessions <- as.character( unique(big.frame$year.dummy) )
@@ -214,51 +173,6 @@ legend("bottomleft",lty=c(1,2), lwd=c(2,1), col=c("black","black"), legend=c("ca
 
 #dev.off()
 ```
-```{r}
-# GGPLOT VERSION 
-#GRACE VERSION
-
-fig3_df <- big.frame %>%
-  group_by(cabinet, year.dummy) %>%
-  summarize(sentence_length = mean(word.count/sentence.count),
-            syllable_count = mean(syllable.count/word.count))
-
-# making year into a factor
-fig3_df$year.dummy <- factor(fig3_df$year.dummy)
-
-# plotting mean sentence length
-ggplot(fig3_df, aes(x = factor(year.dummy))) +
-  geom_line(aes(y = sentence_length, color = as.factor(cabinet), group = cabinet), size = 2) +
-  #geom_line(aes(y = syllable_count, color = as.factor(cabinet), group = cabinet), linetype = 2, size = 1) +
-  labs(x = "Session",
-       y = "Mean Sentence Length",
-       color = "Cabinet") +
-  scale_x_discrete(breaks = unique(fig3_df$year.dummy)[seq(1, length(unique(fig3_df$year.dummy)), length.out = 3)]) +
-  theme_minimal() +
-  scale_color_manual(values = c("green","pink"), labels = c("non-cabinet", "cabinet")) +
-  theme(legend.position = c(0.10, 0.10)) +
-  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
-                              title = "Legend",
-                              keywidth = 1.5,
-                              keyheight = 1.5))
-
-# plotting mean syllables per word
-ggplot(fig3_df, aes(x = factor(year.dummy))) +
-  geom_line(aes(y = syllable_count, color = as.factor(cabinet), group = cabinet), size = 2) +
-  labs(x = "Session",
-       y = "Mean Syllables per Word",
-       color = "Cabinet") +
-  scale_x_discrete(breaks = unique(fig3_df$year.dummy)[seq(1, length(unique(fig3_df$year.dummy)), length.out = 3)]) +
-  theme_minimal() +
-  scale_color_manual(values = c("green","pink"), labels = c("non-cabinet", "cabinet")) +
-  theme(legend.position = c(0.10, 0.10)) +
-  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
-                              title = "Legend",
-                              keywidth = 1.5,
-                              keyheight = 1.5))
-
-# shows that cabinet member speeches did get less complex over time compared to non-cabinet members
-```
 
 #Figure 4 plots average length of speeches for cabinet and noncabinet MPs over time
 ```{r}
@@ -292,33 +206,6 @@ legend("topleft", pch=c(22,21), col=c("black","black"), pt.bg=c("pink","green"),
 
 #dev.off
 
-```
-
-```{r}
-
-# GGPLOT VERSION 
-#GRACE VERSION
-
-fig4_df <- big.frame %>%
-  group_by(cabinet, year.dummy) %>%
-  summarize(word_count = mean(mean(word.count)))
-  
-ggplot(fig4_df, aes(x = year.dummy, y = word_count, color = as.factor(cabinet))) +
-  geom_point(position = position_dodge(width = 0.5), size = 3) +
-  labs(x = "Session",
-       y = "average word count",
-       color = "Cabinet") +
-  scale_x_discrete(breaks = unique(fig4_df$year.dummy)[seq(1, length(unique(fig4_df$year.dummy)), length.out = 15)]) +
-  theme_minimal() +
-  scale_color_manual(values = c("green", "pink"), labels = c("non-cabinet", "cabinet"))+
-  scale_shape_manual(values = c(22)) +
-  theme(legend.position = c(0.85, 0.85),
-        legend.box.background = element_rect(color = "black", size = 1)) +
-  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
-                              title = "Legend",
-                              keywidth = 1.5,
-                              keyheight = 1.5))
-  
 ```
 
 #Figure 5 is boxplot comparing Hardie and Balfour (texts as given in appx)
@@ -405,17 +292,6 @@ print(breakpoints(y~x))
 
 #dev.off()
 ```
-```{r}
-# MY GGPLOT VERSION
-
-ggplot(coef.frame, aes(x = sess, y = est)) +
-  geom_point() +
-  geom_errorbar(aes(ymin = lo, ymax = hi), width = 0.2) +
-  geom_hline(yintercept = 0, color = "red") +
-  scale_x_discrete(breaks = unique(coef.frame$sess)[seq(1, length(unique(coef.frame$sess)), length.out = 15)]) +
-  labs(x = "Session", y = "Estimate") +
-  theme_minimal()
-```
 
 #Table 4 is the 'main' set of regression results contains two models: one with several variables, second wiht just the interaction
 ```{r}
@@ -432,16 +308,16 @@ mod.int <- lm(FRE_recal ~   cabinet*reform.act, data= big.frame)
 mod <- lm(FRE_recal ~ party + cabinet +word.count +competitiveness + cabinet*reform.act, data= big.frame)
 
 #clustered SEs (via Drew Dimmery's code)
-# cl   <- function(dat,fm, cluster){
-#   require(sandwich, quietly = TRUE)
-#   require(lmtest, quietly = TRUE)
-#   M <- length(unique(cluster))
-#   N <- length(cluster)
-#   K <- fm$rank
-#   dfc <- (M/(M-1))*((N-1)/(N-K))
-#   uj  <- apply(estfun(fm),2, function(x) tapply(x, cluster, sum));
-#   vcovCL <- dfc*sandwich(fm, meat=crossprod(uj)/N)
-#   coeftest(fm, vcovCL) }
+ cl   <- function(dat,fm, cluster){
+   require(sandwich, quietly = TRUE)
+   require(lmtest, quietly = TRUE)
+   M <- length(unique(cluster))
+   N <- length(cluster)
+   K <- fm$rank
+   dfc <- (M/(M-1))*((N-1)/(N-K))
+   uj  <- apply(estfun(fm),2, function(x) tapply(x, cluster, sum));
+   vcovCL <- dfc*sandwich(fm, meat=crossprod(uj)/N)
+   coeftest(fm, vcovCL) }
 
 # apply the 'cl' function , cluster on mp
 cat("---------------------------------\n")
@@ -658,43 +534,6 @@ axis(2)
 lines(speeches.non/tot.speeches, lty=2)
 legend("topright", lty=c(1,2), lwd=c(2,1), legend=c("cabinet","non"))
 box()
-```
-
-```{r}
-# MY VERSION
-
-fig9_df <- big.frame %>%
-  group_by(year.dummy, cabinet) %>%
-  dplyr::summarise(speech_count = n()) %>%
-  group_by(year.dummy) %>%
-  mutate(
-    total_speeches = sum(speech_count),
-    cabinet_prop = sum(ifelse(cabinet == 1, speech_count, 0)) / total_speeches,
-    non_cabinet_prop = sum(ifelse(cabinet == 0, speech_count, 0)) / total_speeches
-  ) %>%
-  select(year.dummy, cabinet_prop, non_cabinet_prop) %>%
-  distinct()  # keep only unique session values
-
-
-
-fig9_df$year.dummy <- as.factor(fig9_df$year.dummy)
-
-ggplot(fig9_df, aes(x = as.factor(year.dummy))) +
-  geom_line(aes(y = cabinet_prop, color = "Cabinet")) +
-  geom_line(aes(y = non_cabinet_prop, color = "Non-Cabinet")) +
-  labs(title = "Proportion of Speeches Over Time",
-       x = "Session",
-       y = "Proportion of Speeches",
-       color = "Member Type") +
-  scale_x_discrete(breaks = unique(fig9_df$year.dummy)[seq(1, length(unique(fig9_df$year.dummy)), length.out = 10)]) +
-  theme_minimal() +
-  scale_color_manual(values = c("Cabinet" = "pink", "Non-Cabinet" = "green")) +
-  theme(legend.position = c(0.10, 0.10)) +
-  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
-                              title = "Legend",
-                              keywidth = 1.5,
-                              keyheight = 1.5))
-  
 ```
 
 #Figure 10: probability a minister speaks following a non-minister for 'middle period' around claimed break
