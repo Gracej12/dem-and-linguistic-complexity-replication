@@ -1,0 +1,771 @@
+---
+title: "Replication of 'Democratization and Linguistic Complexity: The Effect of Franchise Extension on Parliamentary Discourse, 1832--1915'"
+author: "Grace Jensen"
+theme: default
+---
+
+```{r}
+rm(list=ls())
+
+library(pacman)
+pacman::p_load(tidyverse,
+               ggplot2,
+               effects,
+               plm,
+               koRpus) 
+
+load("bigframe.rdata")
+```
+
+# recalculate FRE scores 
+```{r}
+# manually recalcualting Fresch score
+big.frame <- big.frame %>%
+  mutate(FRE_recal = 206.835 -
+           1.015 * (word.count/sentence.count) -
+           84.6 * (syllable.count/word.count))
+
+```
+
+#Figure 1 is a boxplot and histogram of the data
+```{r}
+## Fig 1, boxplot and hist
+
+# saving the og version
+png("outputs/fig_1_og.png", width = 800, height = 600)
+
+par(bg="white")
+par(mfrow=c(1,2))
+
+# making a boxplot and histogram showing distribution of FRE scores across speeches- RESEARCHERS VERSION
+boxplot(big.frame$FRE_recal, ylab="FRE", col="cornsilk2")
+hist(big.frame$FRE_recal, main="", xlab="", col="cornsilk2")
+box()
+
+dev.off()
+
+# MY REMAKES USING GGPLOT
+boxplot <- ggplot(big.frame, aes(y = FRE_recal)) + 
+       geom_boxplot(fill = "cornsilk2", color = "black") +
+  labs(ylab = "FRE") +
+  theme_minimal()
+
+histogram <- ggplot(big.frame, aes(x = FRE_recal)) + 
+       geom_histogram(fill = "cornsilk2", color = "black") +
+  labs(ylab = "FRE") +
+  theme_minimal()
+
+ggsave("outputs/fig_1_boxplot.png", boxplot)
+ggsave("outputs/fig_1_boxplot.png", histogram)
+
+
+```
+
+#Table 2 is a summary of the FRE statistics for the sample,
+```{r}
+##Table 2
+print(summary(big.frame$FRE_recal))
+print(summary(big.frame$FRE_recal))
+
+##Table 2 (std dev)
+print(sd(big.frame$FRE_recal))
+
+# shows that the average FRE score is around 50
+```
+
+#Figure 2 is an overtime plot of the cabinet vs noncabinet MPs (means)
+```{r}
+##Fig 2: overtime plot of cab and non cab
+
+#sessions are the time dummies
+sessions <- as.character( unique(big.frame$year.dummy) )
+
+#set up some vectors
+wcountcab <- c()
+wcountnon <- c()
+FKcab <- c()
+FKnon <- c()
+
+for(i in 1:length(unique(big.frame$year.dummy))){
+  
+  sub <- big.frame[big.frame$year.dummy==unique(big.frame$year.dummy)[i],]
+  
+  subcab <- sub[sub$cabinet==1,]
+  wcountcab <- c(wcountcab, mean(subcab$word.count)) #GRACE- ARE THEY DOING ANYTHING WITH THIS VAR? CAN IT BE DELETED?
+  FKcab <- c(FKcab, mean(subcab$FK_read.ease))
+  
+  subnon <- sub[sub$cabinet==0,]
+  wcountnon <- c(wcountnon, mean(subnon$word.count))
+  FKnon <- c(FKnon, mean(subnon$FK_read.ease))
+}
+
+# Create a data frame for plotting
+plot_data <- data.frame(
+  sessions = rep(sessions, 2),
+  FRE_score = c(FKcab, FKnon),
+  group = rep(c("Cabinet", "Non-Cabinet"), each = length(sessions))
+)
+
+# Manually specify breaks and labels for the x-axis
+custom_breaks <- seq(1, length(sessions), length.out = 6)
+custom_labels <- sessions[custom_breaks]
+
+#plot mean FRE scores for cab and noncab over time
+#png("outputs/fig2_line_plot_og.png", width = 800, height = 600)
+
+par(mfrow=c(1,1))
+
+plot(1:length(sessions), FKcab, axes=F, pch=22, col="black", bg="pink", cex=1.5,
+     ylab="FRE", xlab="" )
+axis(1, at=1:length(sessions), labels=sessions)
+axis(2)
+points(1:length(sessions), FKnon, pch=21, col="black", bg="green", cex=1.5)
+box()
+legend("topleft", pch=c(22,21), col=c("black","black"), pt.bg=c("pink","green"), 
+       legend=c("cabinet","non-cabinet"), pt.cex=c(1.5,1.5), bty="n")
+
+low.cab <- lowess(1:length(sessions),FKcab)
+lines(low.cab$x, low.cab$y, lwd=4, col="pink")
+
+low.non <- lowess(1:length(sessions), FKnon)
+lines(low.non$x, low.non$y, lwd=4, col="green")
+
+#dev.off()
+
+# shows that cabinet member speeches did get less complex over time compared to non-cabinet members
+```
+
+
+```{r}
+##Fig 2: overtime plot of cab and non cab
+
+fig2_df <- big.frame %>%
+  group_by(cabinet, year.dummy) %>%
+  summarize(avg_FRE = mean(FRE_recal))
+
+ggplot(fig2_df, aes(x = year.dummy, y = avg_FRE, color = as.factor(cabinet))) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  geom_smooth(method = "loess", se = FALSE, size = 1, aes(group = cabinet)) +
+  labs(x = "Session",
+       y = "FRE",
+       color = "Cabinet") +
+  scale_x_discrete(breaks = unique(fig2_df$year.dummy)[seq(1, length(unique(fig2_df$year.dummy)), length.out = 6)]) +
+  theme_minimal() +
+  scale_color_manual(values = c("green", "pink"), labels = c("non-cabinet", "cabinet"))+
+  scale_shape_manual(values = c(22)) +
+  theme(legend.position = c(0.13, 0.85)) +
+  guides(color = guide_legend(override.aes = list(fill = c("green","pink")),
+                              title = "Legend",
+                              keywidth = 1.5,
+                              keyheight = 1.5))
+  
+
+# shows that cabinet member speeches did get less complex over time compared to non-cabinet members
+```
+
+#Figure 3 plots sentence length and syllables per word (mean overview) for cabinet and non-cabinet
+```{r}
+#sessions <- as.character( unique(big.frame$year.dummy) )
+#ALREADY SET UP THSI VAR SO NOT NECESSARY
+
+#matrix to take the results
+res.mat <- data.frame(cab.sent=NA, cab.syll=NA, non.sent=NA, non.syll=NA)
+
+for(i in 1:length(sessions)){
+  dat <- big.frame[big.frame$year.dummy==sessions[i], ]
+  
+  
+  cab <- dat[dat$cabinet==1,]
+  cab.sent.length <- mean(cab$word.count/cab$sentence.count)
+  res.mat[i,1] <- cab.sent.length
+  
+  cab.syll <- mean(cab$syllable.count/cab$word.count)
+  res.mat[i,2] <- cab.syll
+  
+  noncab <- dat[dat$cabinet==0,]
+  non.sent.length <- mean(noncab$word.count/noncab$sentence.count)
+  res.mat[i,3] <- non.sent.length
+  
+  non.syll <- mean(noncab$syllable.count/noncab$word.count)
+  res.mat[i,4] <- non.syll
+  
+}
+
+#png("outputs/fig3_line_plot.png", width = 1000, height = 600)
+
+par(mfrow=c(1,2))
+par(mgp= c(2, 1, 0))
+
+#plot words per sentence
+plot(1:length(sessions),res.mat[,1], ylab="mean sent length", xlab="", type="l", lwd=2, axes=F)
+lines(1:length(sessions), res.mat[,3], lwd=1, lty=2)
+axis(1,at=1:length(sessions), sessions)
+axis(2)
+box()
+legend("bottomleft",lty=c(1,2), lwd=c(2,1), col=c("black","black"), legend=c("cab","noncab"), bty="n")
+
+#plot syllables per word
+plot(1:length(sessions), res.mat[,2], ylab="mean sylls per word", xlab="", type="l", lwd=2, axes=F)
+lines(1:length(sessions), res.mat[,4], lwd=1, lty=2)
+axis(1,at=1:length(sessions), sessions)
+axis(2)
+box()
+legend("bottomleft",lty=c(1,2), lwd=c(2,1), col=c("black","black"), legend=c("cab","noncab"), bty="n")
+
+#dev.off()
+```
+```{r}
+# GGPLOT VERSION 
+#GRACE VERSION
+
+fig3_df <- big.frame %>%
+  group_by(cabinet, year.dummy) %>%
+  summarize(sentence_length = mean(word.count/sentence.count),
+            syllable_count = mean(syllable.count/word.count))
+
+# making year into a factor
+fig3_df$year.dummy <- factor(fig3_df$year.dummy)
+
+# plotting mean sentence length
+ggplot(fig3_df, aes(x = factor(year.dummy))) +
+  geom_line(aes(y = sentence_length, color = as.factor(cabinet), group = cabinet), size = 2) +
+  #geom_line(aes(y = syllable_count, color = as.factor(cabinet), group = cabinet), linetype = 2, size = 1) +
+  labs(x = "Session",
+       y = "Mean Sentence Length",
+       color = "Cabinet") +
+  scale_x_discrete(breaks = unique(fig3_df$year.dummy)[seq(1, length(unique(fig3_df$year.dummy)), length.out = 3)]) +
+  theme_minimal() +
+  scale_color_manual(values = c("green","pink"), labels = c("non-cabinet", "cabinet")) +
+  theme(legend.position = c(0.10, 0.10)) +
+  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
+                              title = "Legend",
+                              keywidth = 1.5,
+                              keyheight = 1.5))
+
+# plotting mean syllables per word
+ggplot(fig3_df, aes(x = factor(year.dummy))) +
+  geom_line(aes(y = syllable_count, color = as.factor(cabinet), group = cabinet), size = 2) +
+  labs(x = "Session",
+       y = "Mean Syllables per Word",
+       color = "Cabinet") +
+  scale_x_discrete(breaks = unique(fig3_df$year.dummy)[seq(1, length(unique(fig3_df$year.dummy)), length.out = 3)]) +
+  theme_minimal() +
+  scale_color_manual(values = c("green","pink"), labels = c("non-cabinet", "cabinet")) +
+  theme(legend.position = c(0.10, 0.10)) +
+  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
+                              title = "Legend",
+                              keywidth = 1.5,
+                              keyheight = 1.5))
+
+# shows that cabinet member speeches did get less complex over time compared to non-cabinet members
+```
+
+#Figure 4 plots average length of speeches for cabinet and noncabinet MPs over time
+```{r}
+#set up some vectors to take results
+wcountcab <- c()
+wcountnon <- c()
+
+
+for(i in 1:length(unique(big.frame$year.dummy))){
+  
+  sub <- big.frame[big.frame$year.dummy==unique(big.frame$year.dummy)[i],]
+  
+  subcab <- sub[sub$cabinet==1,]
+  wcountcab <- c(wcountcab, mean(subcab$word.count))
+  
+  subnon <- sub[sub$cabinet==0,]
+  wcountnon <- c(wcountnon, mean(subnon$word.count))
+  
+}
+
+#png("outputs/fig4_line_plot.png", width = 1000, height = 600)
+
+plot(1:length(sessions), wcountcab, axes=F, pch=22, col="black", bg="pink", cex=1.5,
+     ylab="", xlab="" )
+axis(1, at=1:length(sessions), labels=sessions)
+axis(2)
+points(1:length(sessions), wcountnon, pch=21, col="black", bg="green", cex=1.5)
+box()
+legend("topleft", pch=c(22,21), col=c("black","black"), pt.bg=c("pink","green"), 
+       legend=c("cabinet","non-cabinet"), pt.cex=c(1.5,1.5))
+
+#dev.off
+
+```
+
+```{r}
+
+# GGPLOT VERSION 
+#GRACE VERSION
+
+fig4_df <- big.frame %>%
+  group_by(cabinet, year.dummy) %>%
+  summarize(word_count = mean(mean(word.count)))
+  
+ggplot(fig4_df, aes(x = year.dummy, y = word_count, color = as.factor(cabinet))) +
+  geom_point(position = position_dodge(width = 0.5), size = 3) +
+  labs(x = "Session",
+       y = "average word count",
+       color = "Cabinet") +
+  scale_x_discrete(breaks = unique(fig4_df$year.dummy)[seq(1, length(unique(fig4_df$year.dummy)), length.out = 15)]) +
+  theme_minimal() +
+  scale_color_manual(values = c("green", "pink"), labels = c("non-cabinet", "cabinet"))+
+  scale_shape_manual(values = c(22)) +
+  theme(legend.position = c(0.85, 0.85),
+        legend.box.background = element_rect(color = "black", size = 1)) +
+  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
+                              title = "Legend",
+                              keywidth = 1.5,
+                              keyheight = 1.5))
+  
+```
+
+#Figure 5 is boxplot comparing Hardie and Balfour (texts as given in appx)
+```{r}
+
+#png("outputs/fig5_line_plot.png", width = 800, height = 600)
+
+balfour <-c(47.72460, 51.63518, 43.67178, 52.70469, 50.90355,44.95354, 45.09750)
+
+hardie <-c(64.4283469809544, 63.9055768205566, 50.5082182657076, 61.3105436303335, 55.1278390113993, 58.8502434353679, 63.5047437731243, 60.3454720293998)
+
+boxplot(balfour, hardie, names=c("Balfour","Hardie"), ylab="score")
+
+
+
+```
+
+#Figure 6 is estd bhat on the session-by-session regressions
+```{r}
+sessions <- as.character( unique(big.frame$year.dummy) )
+
+#matrix to store results
+coef.frame <- data.frame(sess=unique(big.frame$year.dummy), est = as.numeric(NA), se = as.numeric(NA), lo=as.numeric(NA), hi=as.numeric(NA), pval=as.numeric(NA))
+
+#clus SEs function (courtesy of Drew Dimmery)
+cl   <- function(dat,fm, cluster){
+  require(sandwich, quietly = TRUE)
+  require(lmtest, quietly = TRUE)
+  M <- length(unique(cluster))
+  N <- length(cluster)
+  K <- fm$rank
+  dfc <- (M/(M-1))*((N-1)/(N-K))
+  uj  <- apply(estfun(fm),2, function(x) tapply(x, cluster, sum));
+  vcovCL <- dfc*sandwich(fm, meat=crossprod(uj)/N)
+  coeftest(fm, vcovCL) }
+
+for(i in 1:length(sessions)){
+  
+  dat <- big.frame[big.frame$year.dummy==sessions[i],]
+  dat <- dat[complete.cases(dat),]
+  
+  #main regression
+  mod <- lm(FRE_recal ~ party + cabinet+ word.count + competitiveness, data= dat)
+  
+  #fix SEs
+  # apply the 'cl' function , cluster on mp
+  mod.clus.SE <-cl(dat, mod, dat$mp_code)
+  
+  
+  coefs <- mod.clus.SE
+  coef.frame[i,c(2,3)] <- as.numeric(coefs["cabinet1",c(1,2)])
+  
+  coef.frame[i,4] <- coefs["cabinet1",c(1)] + ( 1.96*as.numeric(coefs["cabinet1",2]))
+  coef.frame[i,5] <- coefs["cabinet1",c(1)] -( 1.96*as.numeric(coefs["cabinet1",2]))
+  coef.frame[i,6] <- coefs["cabinet1",4]
+  
+  cat("\n done",sessions[i],"\n")
+  
+}
+
+ylimup <-  max(c(coef.frame$lo, coef.frame$hi))
+ylimdown <- min(c(coef.frame$lo, coef.frame$hi))
+
+#png("outputs/fig6_line_plot.png", width = 1000, height = 600)
+
+plot(1:nrow(coef.frame), coef.frame$est, type="p", pch=16, ylim=c(ylimdown, ylimup), axes=F, xlab="",
+     ylab="")
+
+mtext(expression(hat(beta)), side=2, line=2, cex=1.5, srt=90 )
+
+par(las=1)
+axis(2)
+axis(1, at=1:nrow(coef.frame), labels=coef.frame$sess, cex.axis=.7, las=1)
+box()
+
+arrows(1:nrow(coef.frame), coef.frame$lo, 1:nrow(coef.frame), coef.frame$hi, code=3, angle=90, length=.05)
+abline(h=0, col="red", lwd=2)  
+
+#do structural break test
+require(strucchange)
+y <- coef.frame$est
+x <- 1:nrow(coef.frame)
+print(breakpoints(y~x)) 
+
+#dev.off()
+```
+```{r}
+# MY GGPLOT VERSION
+
+ggplot(coef.frame, aes(x = sess, y = est)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lo, ymax = hi), width = 0.2) +
+  geom_hline(yintercept = 0, color = "red") +
+  scale_x_discrete(breaks = unique(coef.frame$sess)[seq(1, length(unique(coef.frame$sess)), length.out = 15)]) +
+  labs(x = "Session", y = "Estimate") +
+  theme_minimal()
+```
+
+#Table 4 is the 'main' set of regression results contains two models: one with several variables, second wiht just the interaction
+```{r}
+#make the 1868_1 dummy
+reform.act <- rep(0, times=length(big.frame$year.dummy))
+m <- match("1868_1", big.frame$year.dummy)
+reform.act[m:length(big.frame$year.dummy)] <- 1
+big.frame$reform.act <- reform.act
+
+#do an lm with only the interaction
+mod.int <- lm(FRE_recal ~   cabinet*reform.act, data= big.frame)
+
+#do an lm with the controls, too
+mod <- lm(FRE_recal ~ party + cabinet +word.count +competitiveness + cabinet*reform.act, data= big.frame)
+
+#clustered SEs (via Drew Dimmery's code)
+# cl   <- function(dat,fm, cluster){
+#   require(sandwich, quietly = TRUE)
+#   require(lmtest, quietly = TRUE)
+#   M <- length(unique(cluster))
+#   N <- length(cluster)
+#   K <- fm$rank
+#   dfc <- (M/(M-1))*((N-1)/(N-K))
+#   uj  <- apply(estfun(fm),2, function(x) tapply(x, cluster, sum));
+#   vcovCL <- dfc*sandwich(fm, meat=crossprod(uj)/N)
+#   coeftest(fm, vcovCL) }
+
+# apply the 'cl' function , cluster on mp
+cat("---------------------------------\n")
+cat("Simple model: interaction only\n")
+mod.clus.reform.int <- cl(big.frame, mod.int, big.frame$mp_code)
+print(mod.clus.reform.int)
+cat("\n R^2=",summary(mod.int)$r.squared,"\n")
+cat("\n adj R^2=",summary(mod.int)$adj.r.squared,"\n")
+
+
+cat("---------------------------------\n")
+cat("Model with controls\n")
+mod.clus.reform <-cl(big.frame, mod, big.frame$mp_code)
+print(mod.clus.reform)
+cat("\n R^2=",summary(mod)$r.squared,"\n")
+cat("\n adj R^2=",summary(mod)$adj.r.squared,"\n")
+```
+
+#Figure 7 is the estimated marginal effect of the reform act interaction.
+
+```{r}
+robust.se <- function(model, cluster){
+  require(sandwich)
+  require(lmtest)
+  M <- length(unique(cluster))
+  N <- length(cluster)
+  K <- model$rank
+  dfc <- (M/(M - 1)) * ((N - 1)/(N - K))
+  uj <- apply(estfun(model), 2, function(x) tapply(x, cluster, sum));
+  rcse.cov <- dfc * sandwich(model, meat = crossprod(uj)/N)
+  rcse.se <- coeftest(model, rcse.cov)
+  return(list(rcse.cov, rcse.se))
+}
+
+clustervar<-mapply(paste,"MP.",big.frame$mp_code, sep="")
+mod2int <- mod.int
+mod2int$coeftest <- robust.se(mod.int,clustervar)[[2]]
+mod2int$se <- robust.se(mod.int,clustervar)[[2]][,2]
+
+#make robust SEs
+vcov.cluster <- robust.se(mod.int,clustervar)[[1]]
+
+#use Anton strezhnev's code for interaction plot (modulo some clean up on plotting
+# and handling of SEs.)
+
+interaction_plot_binary <- function(model, effect, moderator, interaction, varcov="default", conf=.95, title="Marginal effects plot", xlabel="Value of moderator", ylabel="Estimated marginal coefficient", factor_labels=c(0,1)){
+  
+  # Extract Variance Covariance matrix
+  ifelse(varcov == "default", covMat <- vcov(model), covMat <- varcov)
+  
+  # Extract the data frame of the model
+  mod_frame = model.frame(model)
+  
+  # Get coefficients of variables
+  beta_1 = model$coefficients[[effect]]
+  beta_3 = model$coefficients[[interaction]]
+  
+  # Create list of moderator values at which marginal effect is evaluated
+  x_2 <- c(0,1)
+  
+  # Compute marginal effects
+  delta_1 = beta_1 + beta_3*x_2
+  
+  # Compute variances
+  var_1 = covMat[effect,effect] + (x_2^2)*covMat[interaction, interaction] + 2*x_2*covMat[effect, interaction]
+  
+  # Standard errors
+  se_1 = sqrt(var_1)
+  
+  # Upper and lower confidence bounds
+  z_score = qnorm(1 - ((1 - conf)/2))
+  upper_bound = delta_1 + z_score*se_1
+  lower_bound = delta_1 - z_score*se_1
+  
+  # Determine the bounds of the graphing area
+  max_y = max(upper_bound)
+  min_y = min(lower_bound)
+  
+  # Initialize plotting window
+  plot(x=c(), y=c(), ylim=c(min_y, max_y), xlim=c(-.5, 1.5), xlab=xlabel, ylab=ylabel, main=title, xaxt="n")
+  
+  # Plot lines of confidence intervals
+  #when moderator==0
+  arrows(x_2[1],lower_bound[1], x_2[1],upper_bound[1], code=3, angle=90, lwd=2)
+  
+  #when moderator == 1
+  arrows(x_2[2],lower_bound[2], x_2[2],upper_bound[2], code=3, angle=90, lwd=2)
+  
+  # Plot points of estimated effects
+  points(x=x_2, y=delta_1, pch=21, col="black", bg="blue", cex=2)
+  
+  # Label the axis
+  axis(side=1, at=c(0,1), labels=factor_labels)
+  
+  # Add a dashed horizontal line for zero
+  abline(h=0, lty=3)
+  
+}
+
+#png("outputs/fig7_plot.png", width = 1000, height = 600)
+par(mfrow=c(1,1))
+
+
+#do the plot
+interaction_plot_binary(mod.int, effect="cabinet1" , moderator="reform.act" , 
+                        interaction="cabinet1:reform.act", varcov=vcov.cluster,
+                        title="", xlabel="Reform Act", ylabel="Est marginal coef on Cabinet",
+                        factor_labels=c("before","after"))
+#dev.off()
+```
+
+#Figure 8: look at cabinet members in  models with and without fixed effects if estimates overlap, have evidence that individual latent types are not very important
+
+```{r}
+require(plm)
+
+#only look at cabinet members
+big.frame<- big.frame[big.frame$cabinet==1,]
+#get rid of NAs
+big.frame <- big.frame[complete.cases(big.frame),] 
+
+#make into panel data
+#-> requires aggregates to means/medians per year
+# regress y ~ parl time dummies
+# regress y ~ parl time dummies + mp fixed effects
+# IF parl time dummies are very different in second spec then 
+# mp fixed effects "matter"
+
+#first, make into yearly data
+require(plyr)
+yeardata  <- ddply(big.frame, .(year.dummy, mp_code), summarize, y = mean(FRE_recal))
+
+mod.year <- lm(y~ year.dummy , data=yeardata) #don't fit to x
+
+#now allow fixed effects
+require(plm)
+#don't have to fit cabinet regressor
+mod.fe <- plm(y ~  year.dummy  , data = yeardata, index = c("mp_code","year.dummy"), 
+              model = "within")
+
+#store reg output
+summ.year <- summary(mod.year)
+summ.year_coef <-summary(mod.year)$coef
+summ.fe <- summary(mod.fe)
+summ.fe_coef <- summary(mod.fe)$coef
+
+#function to take estimate row and produce lower and upper bound (95%)
+make.95<-function(x=summ.year_coef[2,]){
+  low <- x[1] - (1.96*x[2]) 
+  hi <- x[1] + (1.96*x[2])
+  out <- as.vector(c(low,hi))
+  out
+}
+
+#now we want to see if the year dummies overlap (95% CIs)
+compare.frame <- data.frame(nofe.est= NA, nofe.low=NA, nofe.hi=NA, fe.est=NA , fe.low =NA , fe.hi=NA)
+
+for(i in 1:length(row.names(summ.fe_coef))){
+  
+  name.no.fe <- row.names(summ.fe_coef)[i]
+  compare.frame[i,1] <- summ.year_coef[name.no.fe,1] #just grab the pt estimates for the constant
+  compare.frame[i,c(2,3)] <- make.95(summ.year_coef[name.no.fe,])
+  
+  compare.frame[i,4] <- summ.fe_coef[name.no.fe,1] #grab pt estimate for each one
+  compare.frame[i,c(5,6)] <- make.95(summ.fe_coef[name.no.fe,])
+}
+
+#label rows
+row.names(compare.frame) <- row.names(summ.fe_coef)
+
+plot(1:nrow(compare.frame), seq(min(compare.frame), max(compare.frame), length=nrow(compare.frame)), 
+     type="n",xlab="session", ylab="estimate", axes=F )
+
+axis(1, at= 1:nrow(compare.frame),labels=gsub("year.dummy","",row.names(compare.frame)))
+axis(2)
+box()
+
+legend("bottomright",pch=c(16,16), lty=c(1,3), col=c("black", "red"), legend=c("w/o fixed effs","fixed effs"))
+
+for(j in 1:nrow(compare.frame)){
+  points(j, compare.frame[j,1], pch=16,col="black")  
+  arrows(j, compare.frame[j,2], j , compare.frame[j,3], code=3, length=0)  
+  
+  points(j+.3, compare.frame[j+.3,4],pch=16, col="red")
+  arrows(j+.3, compare.frame[j+.3,5], j+.3 , compare.frame[j+.3,6], code=3, length=0, col="red", lty=3, lwd=1.5)  
+}
+```
+
+#Figure 9: proportion of all speeches are made by cabinet vs non cabinet
+
+```{r}
+sessions <- unique(big.frame$year.dummy)
+speeches.cab <- c()
+speeches.non <- c()
+tot.speeches <- c()
+mean.len.cab <- c()
+mean.len.non <- c()
+
+
+for(i in 1:length(sessions)){
+  dat <- big.frame[big.frame$year.dummy==sessions[i],]
+  tot.speeches <- c(tot.speeches, nrow(dat))
+  speeches.cab <- c(speeches.cab,nrow(dat[dat$cabinet==1,]))
+  speeches.non <- c(speeches.non,nrow(dat[dat$cabinet==0,]))
+  
+  mean.len.cab <- c(mean.len.cab, mean(dat$word.count[dat$cabinet==1]))
+  mean.len.non <- c(mean.len.non, mean(dat$word.count[dat$cabinet==0]))
+}
+
+par(mfrow=c(1,1))
+plot(speeches.cab/tot.speeches,lwd=2, ylim=c(0,1), type="l", axes=F, xlab="", ylab="")
+axis(1, at=1:length(sessions), labels=sessions)
+axis(2)
+lines(speeches.non/tot.speeches, lty=2)
+legend("topright", lty=c(1,2), lwd=c(2,1), legend=c("cabinet","non"))
+box()
+```
+
+```{r}
+# MY VERSION
+
+fig9_df <- big.frame %>%
+  group_by(year.dummy, cabinet) %>%
+  dplyr::summarise(speech_count = n()) %>%
+  group_by(year.dummy) %>%
+  mutate(
+    total_speeches = sum(speech_count),
+    cabinet_prop = sum(ifelse(cabinet == 1, speech_count, 0)) / total_speeches,
+    non_cabinet_prop = sum(ifelse(cabinet == 0, speech_count, 0)) / total_speeches
+  ) %>%
+  select(year.dummy, cabinet_prop, non_cabinet_prop) %>%
+  distinct()  # keep only unique session values
+
+
+
+fig9_df$year.dummy <- as.factor(fig9_df$year.dummy)
+
+ggplot(fig9_df, aes(x = as.factor(year.dummy))) +
+  geom_line(aes(y = cabinet_prop, color = "Cabinet")) +
+  geom_line(aes(y = non_cabinet_prop, color = "Non-Cabinet")) +
+  labs(title = "Proportion of Speeches Over Time",
+       x = "Session",
+       y = "Proportion of Speeches",
+       color = "Member Type") +
+  scale_x_discrete(breaks = unique(fig9_df$year.dummy)[seq(1, length(unique(fig9_df$year.dummy)), length.out = 10)]) +
+  theme_minimal() +
+  scale_color_manual(values = c("Cabinet" = "pink", "Non-Cabinet" = "green")) +
+  theme(legend.position = c(0.10, 0.10)) +
+  guides(color = guide_legend(override.aes = list(fill = c("pink", "green")),
+                              title = "Legend",
+                              keywidth = 1.5,
+                              keyheight = 1.5))
+  
+```
+
+#Figure 10: probability a minister speaks following a non-minister for 'middle period' around claimed break
+
+```{r}
+require(effects)
+
+#function to regressions and plots
+#(egregious use of <<- ... avert thine eyes)
+make.pred <- function(sess="1865_1", pre = 0){
+  big <<- big.frame[big.frame$year.dummy==sess,]
+  curr <<- as.numeric( big$cabinet[-c(1)]) 
+  prev <<- as.numeric( big$cabinet[-c(length(big$cabinet))] )
+  mod <<- glm(curr ~ prev, family='binomial')
+  out <<- as.data.frame(effect("prev", mod))[pre+1,]
+  out
+}
+
+#do first one of each
+preds0 <- make.pred(sess= "1852_1", pre=0) # this is Pr(cab now|bb)
+preds1 <-  make.pred("1859_1", pre=1) # this is Pr(cab now|cab)
+
+
+sessions <- c( "1852_2",  "1852_3",  "1852_4" , "1852_5" ,  "1857_2" , "1857_3"  , "1859_1","1859_2", "1859_3", "1859_4", "1859_5", "1859_6", 
+               "1859_7", "1865_1", "1865_2", "1865_3", "1868_1", "1868_2", "1868_3", 
+               "1868_4", "1868_5", "1874_1", "1874_2", "1874_3", "1874_4", "1874_5", 
+               "1874_6", "1874_7")
+
+for(i in 1: length(sessions)){
+  preds0 <- rbind(preds0, make.pred(sessions[i], pre=0)) #ERROR EITH PREDS0
+  preds1 <- rbind(preds1, make.pred(sessions[i], pre=1))
+  
+  
+}
+
+plot(1:nrow(preds0), preds0$fit, ylim=c(min(preds0$lower),max(preds0$upper)), axes=F, 
+     xlab="",ylab="", pch=16)
+par(las=2)
+axis(1,at=1:nrow(preds0), labels= c("1852_1",sessions))
+axis(2)
+for(i in 1:nrow(preds0)){
+  arrows(i, preds0[i,4], i, preds0[i,5],code=3, angle=90, length=.05 )
+}
+box()
+```
+
+# Implementing other complexity Measures
+
+```{r}
+# copy and paste speeches
+
+samples <- c(
+  "Asked the Under Secretary of State for the Colonies whether Her Majesty’s Government have arrived at any practical decision with regard to the establishment of emigration bureaux for the purpose of promoting as promised early in the Session a systematic system of State-directed emigration?",
+  
+  "Can the right Honorable Gentleman give the House any information as to when the Royal Commission on the Depression of Trade is likely to report on this subject",
+  
+  "That i cannot say til i have seen it."
+)
+
+# Create a corpus
+sample_corpus <- corpus(samples)
+
+all_readability_measures <- textstat_readability(sample_corpus, 
+                                                 c("Flesch", "Dale.Chall", 
+                                                   "SMOG", "Coleman.Liau"))
+
+tokens <- tokens(sample_corpus, remove_punct = TRUE)
+readability_measures <- textstat_readability(sample_corpus, measure = "Dale.Chall")
+
+
+print(all_readability_measures)
+```
+
+
