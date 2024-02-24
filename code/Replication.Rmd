@@ -35,7 +35,7 @@ big.frame <- big.frame %>%
 ## Fig 1, boxplot and hist
 
 # saving the og version
-#png("outputs/fig_1_og.png", width = 800, height = 600)
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig1.png", width = 800, height = 600)
 
 par(bg="white")
 par(mfrow=c(1,2))
@@ -45,7 +45,7 @@ boxplot(big.frame$FRE_recal, ylab="FRE", col="cornsilk2")
 hist(big.frame$FRE_recal, main="", xlab="", col="cornsilk2")
 box()
 
-#dev.off()
+dev.off()
 ```
 
 #Table 2 is a summary of the FRE statistics for the sample,
@@ -78,7 +78,7 @@ for(i in 1:length(unique(big.frame$year.dummy))){
   sub <- big.frame[big.frame$year.dummy==unique(big.frame$year.dummy)[i],]
   
   subcab <- sub[sub$cabinet==1,]
-  wcountcab <- c(wcountcab, mean(subcab$word.count)) #GRACE- ARE THEY DOING ANYTHING WITH THIS VAR? CAN IT BE DELETED?
+  wcountcab <- c(wcountcab, mean(subcab$word.count))
   FKcab <- c(FKcab, mean(subcab$FK_read.ease))
   
   subnon <- sub[sub$cabinet==0,]
@@ -98,7 +98,7 @@ custom_breaks <- seq(1, length(sessions), length.out = 6)
 custom_labels <- sessions[custom_breaks]
 
 #plot mean FRE scores for cab and noncab over time
-#png("outputs/fig2_line_plot_og.png", width = 800, height = 600)
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig2.png", width = 800, height = 600)
 
 par(mfrow=c(1,1))
 
@@ -117,7 +117,7 @@ lines(low.cab$x, low.cab$y, lwd=4, col="pink")
 low.non <- lowess(1:length(sessions), FKnon)
 lines(low.non$x, low.non$y, lwd=4, col="green")
 
-#dev.off()
+dev.off()
 
 # shows that cabinet member speeches did get less complex over time compared to non-cabinet members
 ```
@@ -150,7 +150,7 @@ for(i in 1:length(sessions)){
   
 }
 
-#png("outputs/fig3_line_plot.png", width = 1000, height = 600)
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig3.png", width = 1000, height = 600)
 
 par(mfrow=c(1,2))
 par(mgp= c(2, 1, 0))
@@ -171,7 +171,7 @@ axis(2)
 box()
 legend("bottomleft",lty=c(1,2), lwd=c(2,1), col=c("black","black"), legend=c("cab","noncab"), bty="n")
 
-#dev.off()
+dev.off()
 ```
 
 #Figure 4 plots average length of speeches for cabinet and noncabinet MPs over time
@@ -193,7 +193,7 @@ for(i in 1:length(unique(big.frame$year.dummy))){
   
 }
 
-#png("outputs/fig4_line_plot.png", width = 1000, height = 600)
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig4.png", width = 1000, height = 600)
 
 plot(1:length(sessions), wcountcab, axes=F, pch=22, col="black", bg="pink", cex=1.5,
      ylab="", xlab="" )
@@ -204,22 +204,22 @@ box()
 legend("topleft", pch=c(22,21), col=c("black","black"), pt.bg=c("pink","green"), 
        legend=c("cabinet","non-cabinet"), pt.cex=c(1.5,1.5))
 
-#dev.off
+dev.off
 
 ```
 
 #Figure 5 is boxplot comparing Hardie and Balfour (texts as given in appx)
 ```{r}
 
-#png("outputs/fig5_line_plot.png", width = 800, height = 600)
-
 balfour <-c(47.72460, 51.63518, 43.67178, 52.70469, 50.90355,44.95354, 45.09750)
 
 hardie <-c(64.4283469809544, 63.9055768205566, 50.5082182657076, 61.3105436303335, 55.1278390113993, 58.8502434353679, 63.5047437731243, 60.3454720293998)
 
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig5.png", width = 1000, height = 600)
+
 boxplot(balfour, hardie, names=c("Balfour","Hardie"), ylab="score")
 
-
+dev.off()
 
 ```
 
@@ -269,7 +269,7 @@ for(i in 1:length(sessions)){
 ylimup <-  max(c(coef.frame$lo, coef.frame$hi))
 ylimdown <- min(c(coef.frame$lo, coef.frame$hi))
 
-#png("outputs/fig6_line_plot.png", width = 1000, height = 600)
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig6.png", width = 1000, height = 600)
 
 plot(1:nrow(coef.frame), coef.frame$est, type="p", pch=16, ylim=c(ylimdown, ylimup), axes=F, xlab="",
      ylab="")
@@ -290,7 +290,7 @@ y <- coef.frame$est
 x <- 1:nrow(coef.frame)
 print(breakpoints(y~x)) 
 
-#dev.off()
+dev.off()
 ```
 
 #Table 4 is the 'main' set of regression results contains two models: one with several variables, second wiht just the interaction
@@ -417,7 +417,7 @@ interaction_plot_binary <- function(model, effect, moderator, interaction, varco
   
 }
 
-#png("outputs/fig7_plot.png", width = 1000, height = 600)
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig7.png", width = 1000, height = 600)
 par(mfrow=c(1,1))
 
 
@@ -426,7 +426,7 @@ interaction_plot_binary(mod.int, effect="cabinet1" , moderator="reform.act" ,
                         interaction="cabinet1:reform.act", varcov=vcov.cluster,
                         title="", xlabel="Reform Act", ylabel="Est marginal coef on Cabinet",
                         factor_labels=c("before","after"))
-#dev.off()
+dev.off()
 ```
 
 #Figure 8: look at cabinet members in  models with and without fixed effects if estimates overlap, have evidence that individual latent types are not very important
@@ -488,6 +488,8 @@ for(i in 1:length(row.names(summ.fe_coef))){
 #label rows
 row.names(compare.frame) <- row.names(summ.fe_coef)
 
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig8.png", width = 1000, height = 600)
+
 plot(1:nrow(compare.frame), seq(min(compare.frame), max(compare.frame), length=nrow(compare.frame)), 
      type="n",xlab="session", ylab="estimate", axes=F )
 
@@ -504,6 +506,8 @@ for(j in 1:nrow(compare.frame)){
   points(j+.3, compare.frame[j+.3,4],pch=16, col="red")
   arrows(j+.3, compare.frame[j+.3,5], j+.3 , compare.frame[j+.3,6], code=3, length=0, col="red", lty=3, lwd=1.5)  
 }
+
+dev.off()
 ```
 
 #Figure 9: proportion of all speeches are made by cabinet vs non cabinet
@@ -527,6 +531,8 @@ for(i in 1:length(sessions)){
   mean.len.non <- c(mean.len.non, mean(dat$word.count[dat$cabinet==0]))
 }
 
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig9.png", width = 1000, height = 600)
+
 par(mfrow=c(1,1))
 plot(speeches.cab/tot.speeches,lwd=2, ylim=c(0,1), type="l", axes=F, xlab="", ylab="")
 axis(1, at=1:length(sessions), labels=sessions)
@@ -534,6 +540,8 @@ axis(2)
 lines(speeches.non/tot.speeches, lty=2)
 legend("topright", lty=c(1,2), lwd=c(2,1), legend=c("cabinet","non"))
 box()
+
+dev.off()
 ```
 
 #Figure 10: probability a minister speaks following a non-minister for 'middle period' around claimed break
@@ -566,8 +574,9 @@ for(i in 1: length(sessions)){
   preds0 <- rbind(preds0, make.pred(sessions[i], pre=0)) #ERROR EITH PREDS0
   preds1 <- rbind(preds1, make.pred(sessions[i], pre=1))
   
-  
 }
+
+png("/Users/scrubscrub/ppol6801/replication1/outputs/fig10.png", width = 1000, height = 600)
 
 plot(1:nrow(preds0), preds0$fit, ylim=c(min(preds0$lower),max(preds0$upper)), axes=F, 
      xlab="",ylab="", pch=16)
@@ -578,6 +587,8 @@ for(i in 1:nrow(preds0)){
   arrows(i, preds0[i,4], i, preds0[i,5],code=3, angle=90, length=.05 )
 }
 box()
+
+dev.off()
 ```
 
 # Implementing other complexity Measures

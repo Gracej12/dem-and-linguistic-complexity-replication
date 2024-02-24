@@ -47,15 +47,15 @@ histogram <- ggplot(big.frame, aes(x = FRE_recal)) +
 boxplot
 histogram
 
-ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_1_boxplot_ggplot.png", boxplot)
-ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_1_boxplot_ggplot.png", histogram)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig1_boxplot_ggplot.png", boxplot)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig1_hist_ggplot.png", histogram)
 
 ```
 
 # Figure 2
 ```{r}
 ##Fig 2: overtime plot of cab and non cab
-#detach(package:plyr)
+detach(package:plyr)
 
 fig2_df <- big.frame %>%
   group_by(cabinet, year.dummy) %>%
@@ -80,7 +80,7 @@ fig2 <- ggplot(fig2_df, aes(x = year.dummy, y = avg_FRE, color = as.factor(cabin
 
 fig2
   
-ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_2_dotplot_ggplot.png", fig2)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig2_ggplot.png", fig2)
 
 # shows that cabinet member speeches did get less complex over time compared to non-cabinet members
 ```
@@ -130,8 +130,8 @@ fig3_syll <- ggplot(fig3_df, aes(x = factor(year.dummy))) +
 fig3_sent
 fig3_syll
 
-ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_3_sent_ggplot.png", fig3_sent)
-ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_3_syll_ggplot.png", fig3_syll)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig3_sent_ggplot.png", fig3_sent)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig3_syll_ggplot.png", fig3_syll)
 
 # shows that cabinet member speeches did get less complex over time compared to non-cabinet members
 ```
@@ -161,7 +161,7 @@ fig4 <- ggplot(fig4_df, aes(x = year.dummy, y = word_count, color = as.factor(ca
 
 fig4
 
-ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_4_wordcount_ggplot.png", fig4)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig4_ggplot.png", fig4)
   
 ```
 
@@ -221,7 +221,7 @@ fig6 <- ggplot(coef.frame, aes(x = sess, y = est)) +
 
 fig6
 
-ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_6_ggplot.png", fig6)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig6_ggplot.png", fig6)
 ```
 
 
