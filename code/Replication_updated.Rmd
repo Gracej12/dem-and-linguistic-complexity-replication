@@ -47,8 +47,8 @@ histogram <- ggplot(big.frame, aes(x = FRE_recal)) +
 boxplot
 histogram
 
-ggsave("outputs/fig_1_boxplot.png", boxplot)
-ggsave("outputs/fig_1_boxplot.png", histogram)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_1_boxplot_ggplot.png", boxplot)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_1_boxplot_ggplot.png", histogram)
 
 ```
 
@@ -73,14 +73,14 @@ fig2 <- ggplot(fig2_df, aes(x = year.dummy, y = avg_FRE, color = as.factor(cabin
   scale_shape_manual(values = c(22)) +
   theme(legend.position = c(0.13, 0.85),
         legend.box.background = element_rect(color = "black", size = 1)) +
-  guides(color = guide_legend(override.aes = list(fill = c("green","pink")),
+  guides(color = guide_legend(override.aes = list(fill = c("non-cabinet" = "green", "cabinet" = "pink")),
                               title = "Legend",
                               keywidth = 1.5,
                               keyheight = 1.5))
 
 fig2
   
-ggsave("outputs/fig_2_dotplot.png", fig2)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_2_dotplot_ggplot.png", fig2)
 
 # shows that cabinet member speeches did get less complex over time compared to non-cabinet members
 ```
@@ -97,7 +97,7 @@ fig3_df <- big.frame %>%
 fig3_df$year.dummy <- factor(fig3_df$year.dummy)
 
 # plotting mean sentence length
-ggplot(fig3_df, aes(x = factor(year.dummy))) +
+fig3_sent <- ggplot(fig3_df, aes(x = factor(year.dummy))) +
   geom_line(aes(y = sentence_length, color = as.factor(cabinet), group = cabinet), size = 2) +
   #geom_line(aes(y = syllable_count, color = as.factor(cabinet), group = cabinet), linetype = 2, size = 1) +
   labs(x = "Session",
@@ -113,7 +113,7 @@ ggplot(fig3_df, aes(x = factor(year.dummy))) +
                               keyheight = 1.5))
 
 # plotting mean syllables per word
-ggplot(fig3_df, aes(x = factor(year.dummy))) +
+fig3_syll <- ggplot(fig3_df, aes(x = factor(year.dummy))) +
   geom_line(aes(y = syllable_count, color = as.factor(cabinet), group = cabinet), size = 2) +
   labs(x = "Session",
        y = "Mean Syllables per Word",
@@ -127,6 +127,12 @@ ggplot(fig3_df, aes(x = factor(year.dummy))) +
                               keywidth = 1.5,
                               keyheight = 1.5))
 
+fig3_sent
+fig3_syll
+
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_3_sent_ggplot.png", fig3_sent)
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_3_syll_ggplot.png", fig3_syll)
+
 # shows that cabinet member speeches did get less complex over time compared to non-cabinet members
 ```
 
@@ -137,7 +143,7 @@ fig4_df <- big.frame %>%
   group_by(cabinet, year.dummy) %>%
   summarize(word_count = mean(mean(word.count)))
   
-ggplot(fig4_df, aes(x = year.dummy, y = word_count, color = as.factor(cabinet))) +
+fig4 <- ggplot(fig4_df, aes(x = year.dummy, y = word_count, color = as.factor(cabinet))) +
   geom_point(position = position_dodge(width = 0.5), size = 3) +
   labs(x = "Session",
        y = "average word count",
@@ -152,6 +158,10 @@ ggplot(fig4_df, aes(x = year.dummy, y = word_count, color = as.factor(cabinet)))
                               title = "Legend",
                               keywidth = 1.5,
                               keyheight = 1.5))
+
+fig4
+
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_4_wordcount_ggplot.png", fig4)
   
 ```
 
@@ -201,13 +211,17 @@ for(i in 1:length(sessions)){
 ylimup <-  max(c(coef.frame$lo, coef.frame$hi))
 ylimdown <- min(c(coef.frame$lo, coef.frame$hi))
 
-ggplot(coef.frame, aes(x = sess, y = est)) +
+fig6 <- ggplot(coef.frame, aes(x = sess, y = est)) +
   geom_point() +
   geom_errorbar(aes(ymin = lo, ymax = hi), width = 0.2) +
   geom_hline(yintercept = 0, color = "red") +
   scale_x_discrete(breaks = unique(coef.frame$sess)[seq(1, length(unique(coef.frame$sess)), length.out = 15)]) +
   labs(x = "Session", y = "Estimate") +
   theme_minimal()
+
+fig6
+
+ggsave("/Users/scrubscrub/ppol6801/replication1/outputs/fig_6_ggplot.png", fig6)
 ```
 
 
